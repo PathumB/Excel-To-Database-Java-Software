@@ -24,11 +24,11 @@ public class ExcelDataLoader {
                 Row row = sheet.getRow(rowIndex);
 
                 int id = (int) row.getCell(0).getNumericCellValue();
-                String name = row.getCell(2).getStringCellValue();
-                String email = row.getCell(5).getStringCellValue();
-                String gender = row.getCell(13).getStringCellValue();
-                String password = row.getCell(22).getStringCellValue();
-                String file1 = row.getCell(25).getStringCellValue();
+                String name = row.getCell(1).getStringCellValue();
+                String email = row.getCell(2).getStringCellValue();
+                String gender = row.getCell(3).getStringCellValue();
+                String password = row.getCell(4).getStringCellValue();
+                String file1 = row.getCell(5).getStringCellValue();
 
                 if (email.isEmpty()) {
                     System.out.println("Skipping row " + rowIndex + " - email value is empty");
