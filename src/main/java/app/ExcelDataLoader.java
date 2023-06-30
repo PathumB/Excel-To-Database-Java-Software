@@ -1,11 +1,10 @@
 package app;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.mindrot.jbcrypt.BCrypt;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.*;
-import java.util.HashSet;
-import java.util.Set;
 
 public class ExcelDataLoader {
     private static final String FILE_PATH = "src/main/resources/health-career-me-structure.xlsx";
@@ -20,7 +19,6 @@ public class ExcelDataLoader {
         {
 
             Sheet sheet = workbook.getSheetAt(SHEET_INDEX);
-            Set<String> emailSet = new HashSet<>(); // Set to store email addresses
 
             // Start from row 1 to skip the header
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
@@ -33,18 +31,13 @@ public class ExcelDataLoader {
                 String password = row.getCell(4).getStringCellValue();
                 String file1 = row.getCell(5).getStringCellValue();
 
-                // Add the email to the set
-                emailSet.add(email);
-
                 if (email.isEmpty()) {
                     System.out.println("Skipping row " + rowIndex + " - email value is empty");
                     continue;
                 }
 
-                if (emailSet.contains(email)) {
-                    System.out.println("Skipping row " + rowIndex + " - duplicate email: " + email);
-                    continue;
-                }
+                // hash password
+                String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
                 // Insert data into the users table
                 String insertUserQuery = "INSERT INTO users (name, email, password, gender, role, created_at, updated_at) " +
@@ -52,7 +45,7 @@ public class ExcelDataLoader {
                 PreparedStatement userStatement = connection.prepareStatement(insertUserQuery, Statement.RETURN_GENERATED_KEYS);
                 userStatement.setString(1, name);
                 userStatement.setString(2, email);
-                userStatement.setString(3, password);
+                userStatement.setString(3, hashedPassword);
                 userStatement.setString(4, gender);
                 userStatement.setString(5, "candidate");
                 userStatement.executeUpdate();
