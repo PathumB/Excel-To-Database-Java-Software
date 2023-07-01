@@ -84,13 +84,8 @@ class LoadData {
                     userId = generatedKeys.getInt(1);
                 }
 
-                // Insert data into the candidate_cvs table
-                String insertCVQuery = "INSERT INTO candidate_cvs (user_id, file, created_at, updated_at) " +
-                        "VALUES (?, ?, NOW(), NOW())";
-                PreparedStatement cvStatement = connection.prepareStatement(insertCVQuery);
-                cvStatement.setInt(1, userId);
-                cvStatement.setString(2, file1);
-                cvStatement.executeUpdate();
+                // candicate_cvs table
+                insertCandidateCV(connection, userId, file1);
 
                 // Insert license types
                 String[] licenseTypeArray = licenseTypes.split(",");
@@ -105,7 +100,18 @@ class LoadData {
         }
     }
 
-    // Insert data into the candidate_licenses table
+
+    // insert into candidate_cvs table
+    private static void insertCandidateCV(Connection connection, int userId, String file1) throws SQLException{
+        String insertCVQuery = "INSERT INTO candidate_cvs (user_id, file, created_at, updated_at) " +
+                "VALUES (?, ?, NOW(), NOW())";
+        PreparedStatement cvStatement = connection.prepareStatement(insertCVQuery);
+        cvStatement.setInt(1, userId);
+        cvStatement.setString(2, file1);
+        cvStatement.executeUpdate();
+    }
+
+    // Insert into candidate_licenses table
     private static void insertCandidateLicense(Connection connection, int userId, String licenseType, String createdAt) throws SQLException {
         String insertLicenseQuery = "INSERT INTO candidate_licenses (user_id, title, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?)";
