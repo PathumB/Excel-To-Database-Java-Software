@@ -105,6 +105,7 @@ class LoadData {
         }
     }
 
+    // Insert data into the candidate_licenses table
     private static void insertCandidateLicense(Connection connection, int userId, String licenseType, String createdAt) throws SQLException {
         String insertLicenseQuery = "INSERT INTO candidate_licenses (user_id, title, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?)";
