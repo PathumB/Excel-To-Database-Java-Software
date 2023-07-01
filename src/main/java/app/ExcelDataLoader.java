@@ -10,6 +10,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ExcelDataLoader {
+    public static void main(String[] args) {
+        new LoadData().loadDataFromExcel();
+    }
+}
+
+class LoadData {
     private static final String FILE_PATH = "src/main/resources/health-career-me-structure.xlsx";
     private static final int SHEET_INDEX = 0;
 
@@ -20,7 +26,7 @@ public class ExcelDataLoader {
         try (FileInputStream file = new FileInputStream(FILE_PATH);
              Workbook workbook = new XSSFWorkbook(file);
              Connection connection = DriverManager.getConnection(
-                     DatabaseConfig.DB_URL, DatabaseConfig.DB_USER, DatabaseConfig.DB_PASSWORD
+                     env.DB_URL, env.DB_USER, env.DB_PASSWORD
              ))
         {
 
@@ -119,9 +125,5 @@ public class ExcelDataLoader {
 
         Date date = inputDateFormat.parse(dateStr);
         return outputDateFormat.format(date);
-    }
-
-    public static void main(String[] args) {
-        ExcelDataLoader.loadDataFromExcel();
     }
 }
