@@ -38,6 +38,7 @@ public class ExcelDataLoader {
                 String file1 = row.getCell(5).getStringCellValue();
                 String approved_at = row.getCell(6).getStringCellValue();
                 String created_at = row.getCell(7).getStringCellValue();
+                String licenseTypes = row.getCell(9).getStringCellValue();
 
                 // Format dates
                 try {
@@ -47,6 +48,7 @@ public class ExcelDataLoader {
                     e.printStackTrace();
                 }
 
+                // validation
                 if (email.isEmpty()) {
                     System.out.println("Skipping row " + rowIndex + " - email value is empty");
                     continue;
@@ -84,11 +86,30 @@ public class ExcelDataLoader {
                 cvStatement.setString(2, file1);
                 cvStatement.executeUpdate();
 
+                // Insert license types
+                String[] licenseTypeArray = licenseTypes.split(",");
+                for (String licenseType : licenseTypeArray) {
+                    insertCandidateLicense(connection, userId, licenseType.trim(), created_at);
+                }
+
                 System.out.println("Inserted data for row: " + rowIndex);
             }
         } catch (IOException | SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void insertCandidateLicense(Connection connection, int userId, String licenseType, String createdAt) throws SQLException {
+        String insertLicenseQuery = "INSERT INTO candidate_licenses (user_id, title, created_at, updated_at) " +
+                "VALUES (?, ?, ?, ?)";
+
+        PreparedStatement licenseStatement = connection.prepareStatement(insertLicenseQuery);
+        licenseStatement.setInt(1, userId);
+        licenseStatement.setString(2, licenseType);
+        licenseStatement.setString(3, createdAt);
+        licenseStatement.setString(4, createdAt);
+
+        licenseStatement.executeUpdate();
     }
 
     // date format
