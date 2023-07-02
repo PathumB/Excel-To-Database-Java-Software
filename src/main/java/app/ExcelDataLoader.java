@@ -84,7 +84,7 @@ class LoadData {
                     userId = generatedKeys.getInt(1);
                 }
 
-                // candicate_cvs table
+                // candidate_cvs table
                 insertCandidateCV(connection, userId, file1);
 
                 // Insert license types
