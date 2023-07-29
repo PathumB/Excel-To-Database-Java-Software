@@ -1,7 +1,11 @@
 package app;
-import org.apache.poi.ss.usermodel.*;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mindrot.jbcrypt.BCrypt;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.*;
@@ -10,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ExcelDataLoader {
+    private static final String APPLICATION_NAME = "Test App";
     public static void main(String[] args) {
         new LoadData().loadDataFromExcel();
     }
@@ -18,6 +23,8 @@ public class ExcelDataLoader {
 class LoadData {
     private static final String FILE_PATH = "src/main/resources/health-career-me-structure.xlsx";
     private static final int SHEET_INDEX = 0;
+    private static final String SERVICE_ACCOUNT_JSON_PATH = "src/main/resources/project-02-391607-f0109bc4ffcd.json";
+
 
     public static void loadDataFromExcel() {
         String inputFormat = "dd-MM-yyyyHH:mm";
@@ -36,6 +43,7 @@ class LoadData {
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
 
+                // Get data from excel
                 int id = (int) row.getCell(0).getNumericCellValue();
                 String name = row.getCell(1).getStringCellValue();
                 String email = row.getCell(2).getStringCellValue();
@@ -93,6 +101,38 @@ class LoadData {
                     insertCandidateLicense(connection, userId, licenseType.trim(), created_at);
                 }
 
+
+//                try {
+//                    // Initialize the Drive service
+//                    Drive driveService = getDriveService(SERVICE_ACCOUNT_JSON_PATH);
+//
+//                    // Set the destinationPath
+////                    String destinationPath = "src/main/resources/cvs/"; // Replace with the desired destination path
+//
+//                    // Start from row 1 to skip the header
+//                    String fileId = FileUtil.extractFileIdFromLink(file1);
+//                    if (fileId == null) {
+//                        System.out.println("Invalid Google Drive link: " + file1);
+//                        continue;
+//                    }
+//
+//                    // Download the file from Drive
+//                    InputStream fileContent = FileUtil.downloadFileContentFromDrive(driveService, fileId);
+//
+//                    // Upload file content to S3
+//                    S3Client s3Client = S3Client.builder().region(Region.US_EAST_1).build();
+//                    String s3Key = S3Uploader.uploadFileToS3(s3Client, fileContent);
+//
+//                    // Perform any further processing or database operations using the downloaded file and S3 key
+//
+//                    // Delete the local file after processing
+////                    FileUtil.deleteFile(downloadedFile);
+//                    fileContent.close();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+
+
                 System.out.println("Inserted data for row: " + rowIndex);
             }
         } catch (IOException | SQLException e) {
@@ -133,4 +173,17 @@ class LoadData {
         Date date = inputDateFormat.parse(dateStr);
         return outputDateFormat.format(date);
     }
+
+    // Google Drive API
+//    private static Drive getDriveService(String serviceAccountJsonPath) throws IOException, GeneralSecurityException {
+//        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+//        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+//
+//        GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(serviceAccountJsonPath))
+//                .createScoped(Collections.singleton(DriveScopes.DRIVE));
+//
+//        return new Drive.Builder(httpTransport, jsonFactory, credential)
+//                .setApplicationName("Test app...")
+//                .build();
+//    }
 }
