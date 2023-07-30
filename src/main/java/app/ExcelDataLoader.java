@@ -132,8 +132,6 @@ class LoadData {
                         System.out.println("Invalid or unsupported Google Drive link: " + link);
                     }
                 }
-                // candidate_cvs table
-//                insertCandidateCV(connection, userId, fileName);
                 // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
 
 
