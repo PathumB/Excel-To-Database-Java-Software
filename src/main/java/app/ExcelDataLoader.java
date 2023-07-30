@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹main method🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
 public class ExcelDataLoader {
     private static final String APPLICATION_NAME = "Test App";
     public static void main(String[] args) {
@@ -37,6 +38,7 @@ public class ExcelDataLoader {
     }
 }
 
+// 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹whole process🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
 class LoadData {
     private static final String FILE_PATH = "src/main/resources/health-career-me-structure.xlsx";
     private static final int SHEET_INDEX = 0;
@@ -47,6 +49,7 @@ class LoadData {
         String inputFormat = "dd-MM-yyyyHH:mm";
         String formatDate = "yyyy-MM-dd HH:mm:ss";
 
+        // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸DB connection🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
         try (FileInputStream file = new FileInputStream(FILE_PATH);
              Workbook workbook = new XSSFWorkbook(file);
              Connection connection = DriverManager.getConnection(
@@ -56,11 +59,12 @@ class LoadData {
 
             Sheet sheet = workbook.getSheetAt(SHEET_INDEX);
 
+            // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸extract data from excel & insert to DB🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
             // Start from row 1 to skip the header
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
 
-                // Get data from excel
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Get data from excel🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 int id = (int) row.getCell(0).getNumericCellValue();
                 String name = row.getCell(1).getStringCellValue();
                 String email = row.getCell(2).getStringCellValue();
@@ -72,8 +76,7 @@ class LoadData {
                 String licenseTypes = row.getCell(9).getStringCellValue();
 
 
-// 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
-                // Format dates
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Format dates🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 try {
                     approved_at = formatDate(approved_at, inputFormat, formatDate);
                     created_at = formatDate(created_at, inputFormat, formatDate);
@@ -81,16 +84,16 @@ class LoadData {
                     e.printStackTrace();
                 }
 
-                // validation
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸validate emails🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 if (email.isEmpty()) {
                     System.out.println("Skipping row " + rowIndex + " - email value is empty");
                     continue;
                 }
 
-                // hash password
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸hash password🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
-                // Insert data into the users table
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Insert data into the users table🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 String insertUserQuery = "INSERT INTO users (name, email, password, gender, role, approved_at, created_at, updated_at) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement userStatement = connection.prepareStatement(insertUserQuery, Statement.RETURN_GENERATED_KEYS);
@@ -104,21 +107,20 @@ class LoadData {
                 userStatement.setString(8, created_at);
                 userStatement.executeUpdate();
 
-                // Get the auto-generated user_id
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Get the auto-generated user_id🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 ResultSet generatedKeys = userStatement.getGeneratedKeys();
                 int userId = 0;
                 if (generatedKeys.next()) {
                     userId = generatedKeys.getInt(1);
                 }
 
-                // Insert license types
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Insert license types🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 String[] licenseTypeArray = licenseTypes.split(",");
                 for (String licenseType : licenseTypeArray) {
                     insertCandidateLicense(connection, userId, licenseType.trim(), created_at);
                 }
 
-                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
-                // Download file from Google Drive
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Download file from Google Drive (method call)🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
                 String[] links = file1.split("\\s*,\\s*");
                 for (String link : links) {
                     String fileId = extractFileId(link.trim());
@@ -132,42 +134,6 @@ class LoadData {
                         System.out.println("Invalid or unsupported Google Drive link: " + link);
                     }
                 }
-                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
-
-
-// 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
-
-
-//                try {
-//                    // Initialize the Drive service
-//                    Drive driveService = getDriveService(SERVICE_ACCOUNT_JSON_PATH);
-//
-//                    // Set the destinationPath
-////                    String destinationPath = "src/main/resources/cvs/"; // Replace with the desired destination path
-//
-//                    // Start from row 1 to skip the header
-//                    String fileId = FileUtil.extractFileIdFromLink(file1);
-//                    if (fileId == null) {
-//                        System.out.println("Invalid Google Drive link: " + file1);
-//                        continue;
-//                    }
-//
-//                    // Download the file from Drive
-//                    InputStream fileContent = FileUtil.downloadFileContentFromDrive(driveService, fileId);
-//
-//                    // Upload file content to S3
-//                    S3Client s3Client = S3Client.builder().region(Region.US_EAST_1).build();
-//                    String s3Key = S3Uploader.uploadFileToS3(s3Client, fileContent);
-//
-//                    // Perform any further processing or database operations using the downloaded file and S3 key
-//
-//                    // Delete the local file after processing
-////                    FileUtil.deleteFile(downloadedFile);
-//                    fileContent.close();
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-
 
                 System.out.println("Inserted data for row: " + rowIndex);
             }
@@ -177,8 +143,7 @@ class LoadData {
     }
 
 
-    // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
-    // Extract file ID from Google Drive link
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹Extract file ID from Google Drive link🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     public static String extractFileId(String googleDriveLink) {
         // Define the regex pattern to match the file ID in the Google Drive link
         Pattern pattern = Pattern.compile("[-\\w]{25,}");
@@ -193,7 +158,7 @@ class LoadData {
         return null;
     }
 
-    // download file from Google Drive
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹download file from Google Drive🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     public static void downloadFileFromGoogleDrive(String fileId,Connection connection, int userId) throws IOException, GeneralSecurityException {
         HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
@@ -216,7 +181,7 @@ class LoadData {
             e.printStackTrace();
         }
 
-        // Download the file
+        // set file path
         String localFilePath = "src/main/resources/cvs/" + hashedFileName;
 
         try (OutputStream outputStream = new FileOutputStream(localFilePath)) {
@@ -232,7 +197,7 @@ class LoadData {
 
     }
 
-    // set timeout
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹set timeout🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     private static HttpRequestInitializer setHttpTimeout(final HttpRequestInitializer requestInitializer) {
         return httpRequest -> {
             requestInitializer.initialize(httpRequest);
@@ -240,7 +205,7 @@ class LoadData {
         };
     }
 
-    // hash file name
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹hash file name🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     private static String hashFileName(String fileName) throws ParseException {
         String[] fileNameArray = fileName.split("\\.");
         String extension = fileNameArray[fileNameArray.length - 1];
@@ -249,11 +214,8 @@ class LoadData {
         return hashedFileName + "." + extension;
     }
 
-    // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
 
-
-
-    // insert into candidate_cvs table
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹insert into candidate_cvs table🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     private static void insertCandidateCV(Connection connection, int userId, String fileName) throws SQLException{
         String insertCVQuery = "INSERT INTO candidate_cvs (user_id, file, created_at, updated_at) " +
                 "VALUES (?, ?, NOW(), NOW())";
@@ -263,7 +225,7 @@ class LoadData {
         cvStatement.executeUpdate();
     }
 
-    // Insert into candidate_licenses table
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹Insert into candidate_licenses table🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     private static void insertCandidateLicense(Connection connection, int userId, String licenseType, String createdAt) throws SQLException {
         String insertLicenseQuery = "INSERT INTO candidate_licenses (user_id, title, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?)";
@@ -277,7 +239,7 @@ class LoadData {
         licenseStatement.executeUpdate();
     }
 
-    // date format
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹date format🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     private static String formatDate(String dateStr, String inputFormat, String outputFormat) throws ParseException {
         SimpleDateFormat inputDateFormat = new SimpleDateFormat(inputFormat);
         SimpleDateFormat outputDateFormat = new SimpleDateFormat(outputFormat);
@@ -285,17 +247,4 @@ class LoadData {
         Date date = inputDateFormat.parse(dateStr);
         return outputDateFormat.format(date);
     }
-
-    // Google Drive API
-//    private static Drive getDriveService(String serviceAccountJsonPath) throws IOException, GeneralSecurityException {
-//        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-//        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-//
-//        GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(serviceAccountJsonPath))
-//                .createScoped(Collections.singleton(DriveScopes.DRIVE));
-//
-//        return new Drive.Builder(httpTransport, jsonFactory, credential)
-//                .setApplicationName("Test app...")
-//                .build();
-//    }
 }
