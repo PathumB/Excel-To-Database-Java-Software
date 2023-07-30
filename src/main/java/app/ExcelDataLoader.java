@@ -1,5 +1,15 @@
 package app;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.File;
+import com.google.common.hash.Hashing;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -7,11 +17,18 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ExcelDataLoader {
     private static final String APPLICATION_NAME = "Test App";
@@ -54,6 +71,8 @@ class LoadData {
                 String created_at = row.getCell(7).getStringCellValue();
                 String licenseTypes = row.getCell(9).getStringCellValue();
 
+
+// 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
                 // Format dates
                 try {
                     approved_at = formatDate(approved_at, inputFormat, formatDate);
@@ -92,14 +111,33 @@ class LoadData {
                     userId = generatedKeys.getInt(1);
                 }
 
-                // candidate_cvs table
-                insertCandidateCV(connection, userId, file1);
-
                 // Insert license types
                 String[] licenseTypeArray = licenseTypes.split(",");
                 for (String licenseType : licenseTypeArray) {
                     insertCandidateLicense(connection, userId, licenseType.trim(), created_at);
                 }
+
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
+                // Download file from Google Drive
+                String[] links = file1.split("\\s*,\\s*");
+                for (String link : links) {
+                    String fileId = extractFileId(link.trim());
+                    if (fileId != null) {
+                        try {
+                            downloadFileFromGoogleDrive(fileId, connection, userId);
+                        }catch (IOException | GeneralSecurityException | org.apache.http.ParseException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        System.out.println("Invalid or unsupported Google Drive link: " + link);
+                    }
+                }
+                // candidate_cvs table
+//                insertCandidateCV(connection, userId, fileName);
+                // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
+
+
+// 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
 
 
 //                try {
@@ -141,13 +179,89 @@ class LoadData {
     }
 
 
+    // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
+    // Extract file ID from Google Drive link
+    public static String extractFileId(String googleDriveLink) {
+        // Define the regex pattern to match the file ID in the Google Drive link
+        Pattern pattern = Pattern.compile("[-\\w]{25,}");
+        Matcher matcher = pattern.matcher(googleDriveLink);
+
+        // Find the first occurrence of the regex pattern in the link
+        if (matcher.find()) {
+            return matcher.group();
+        }
+
+        // If no match found, return null or throw an exception as needed
+        return null;
+    }
+
+    // download file from Google Drive
+    public static void downloadFileFromGoogleDrive(String fileId,Connection connection, int userId) throws IOException, GeneralSecurityException {
+        HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+
+        GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(SERVICE_ACCOUNT_JSON_PATH))
+                .createScoped(Collections.singleton(DriveScopes.DRIVE_READONLY));
+
+        Drive drive = new Drive.Builder(httpTransport, jsonFactory, setHttpTimeout(credential))
+                .setApplicationName("Test App")
+                .setHttpRequestInitializer(credential)
+                .build();
+
+        // Get the file metadata
+        File fileMetadata = drive.files().get(fileId).execute();
+        // set hash name
+        String hashedFileName = null;
+        try {
+            hashedFileName = hashFileName(fileMetadata.getName());
+        }catch (ParseException e){
+            e.printStackTrace();
+        }
+
+        // Download the file
+        String localFilePath = "src/main/resources/cvs/" + hashedFileName;
+
+        try (OutputStream outputStream = new FileOutputStream(localFilePath)) {
+            drive.files().get(fileId).executeMediaAndDownloadTo(outputStream);
+        }
+
+        System.out.println("File downloaded: " + localFilePath);
+        try {
+            insertCandidateCV(connection, userId, hashedFileName);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    // set timeout
+    private static HttpRequestInitializer setHttpTimeout(final HttpRequestInitializer requestInitializer) {
+        return httpRequest -> {
+            requestInitializer.initialize(httpRequest);
+            httpRequest.setReadTimeout(3 * 60000); // 3 minutes
+        };
+    }
+
+    // hash file name
+    private static String hashFileName(String fileName) throws ParseException {
+        String[] fileNameArray = fileName.split("\\.");
+        String extension = fileNameArray[fileNameArray.length - 1];
+        String fileNameWithoutExtension = fileName.substring(0, fileName.length() - extension.length() - 1);
+        String hashedFileName = Hashing.sha256().hashString(fileNameWithoutExtension, StandardCharsets.UTF_8).toString();
+        return hashedFileName + "." + extension;
+    }
+
+    // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
+
+
+
     // insert into candidate_cvs table
-    private static void insertCandidateCV(Connection connection, int userId, String file1) throws SQLException{
+    private static void insertCandidateCV(Connection connection, int userId, String fileName) throws SQLException{
         String insertCVQuery = "INSERT INTO candidate_cvs (user_id, file, created_at, updated_at) " +
                 "VALUES (?, ?, NOW(), NOW())";
         PreparedStatement cvStatement = connection.prepareStatement(insertCVQuery);
         cvStatement.setInt(1, userId);
-        cvStatement.setString(2, file1);
+        cvStatement.setString(2, fileName);
         cvStatement.executeUpdate();
     }
 
