@@ -196,18 +196,21 @@ class LoadData {
 
         System.out.println("File downloaded: " + localFilePath);
         try {
+            // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸insert data to cvs table🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
             insertCandidateCV(connection, userId, hashedFileName);
 
             // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Upload the file to Amazon S3🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
             String s3BucketName = env.S3_BUCKET_NAME;
-            String s3Key = localFilePath;
+            String s3Folder = "storage/app/cvs";
+            String s3Key = s3Folder + "/" + Paths.get(localFilePath).getFileName();
             uploadFileToS3(localFilePath, s3BucketName, s3Key);
+
         }catch (SQLException e){
             e.printStackTrace();
         }
     }
 
-    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹Upload the file to Amazon S3🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹Upload the file to Amazon S3 bucket🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
     private static void uploadFileToS3(String localFilePath, String bucketName, String s3Key) {
         S3Client s3Client = S3Client.builder()
                 .region(Region.US_EAST_1)
