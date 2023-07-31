@@ -15,12 +15,19 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mindrot.jbcrypt.BCrypt;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.sql.*;
 import java.text.ParseException;
@@ -32,7 +39,6 @@ import java.util.regex.Pattern;
 
 // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹main method🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
 public class ExcelDataLoader {
-    private static final String APPLICATION_NAME = "Test App";
     public static void main(String[] args) {
         new LoadData().loadDataFromExcel();
     }
@@ -167,7 +173,7 @@ class LoadData {
                 .createScoped(Collections.singleton(DriveScopes.DRIVE_READONLY));
 
         Drive drive = new Drive.Builder(httpTransport, jsonFactory, setHttpTimeout(credential))
-                .setApplicationName("Test App")
+                .setApplicationName(env.APPLICATION_NAME)
                 .setHttpRequestInitializer(credential)
                 .build();
 
@@ -191,10 +197,39 @@ class LoadData {
         System.out.println("File downloaded: " + localFilePath);
         try {
             insertCandidateCV(connection, userId, hashedFileName);
+
+            // 🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸Upload the file to Amazon S3🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸
+            String s3BucketName = env.S3_BUCKET_NAME;
+            String s3Key = localFilePath;
+            uploadFileToS3(localFilePath, s3BucketName, s3Key);
         }catch (SQLException e){
             e.printStackTrace();
         }
+    }
 
+    // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹Upload the file to Amazon S3🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
+    private static void uploadFileToS3(String localFilePath, String bucketName, String s3Key) {
+        S3Client s3Client = S3Client.builder()
+                .region(Region.US_EAST_1)
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build();
+
+        try {
+            // Read the file as bytes from the local file path
+            byte[] fileBytes = Files.readAllBytes(Paths.get(localFilePath));
+
+            // Upload the file to Amazon S3
+            s3Client.putObject(PutObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(s3Key)
+                            .build(),
+                    RequestBody.fromBytes(fileBytes));
+            System.out.println("File uploaded to Amazon S3: " + s3Key);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            s3Client.close();
+        }
     }
 
     // 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹set timeout🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹
