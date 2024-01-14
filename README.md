@@ -1,6 +1,12 @@
 #### What is this?
-I'm working for a web development company. Here we made a little bit large scale web application for a client. Previously that client have maintained a excell sheet to store their customer details, but after creating their web application they gave that excel sheet for us to insert that data to database. We are using AWS for server management and now we need to upload that data to AWS. 
-Therefore our backend engineer told me to "design a software with any lanaguage to upload this excel sheet's text based data to local mysql database and there are google drive links containing in some rows in excel sheet. That documents need to be download and upload to AWS S3 bucket"
-He gave me a high level idea to do this and I made it : )
+I previously worked for a web development company where we created a large-scale web application for a client. The client had been maintaining customer details in an Excel sheet, which they provided to us after the web application was developed. Our task was to transfer this data to the database, hosted on AWS.
 
-This works on windows and any Linux Distros. But first you need to have JRE (java runtime environment) to run this software. This is a CLI based software.
+Our backend engineer instructed me to design a software solution capable of uploading the text-based data from the Excel sheet to a local MySQL database. Additionally, some rows in the Excel sheet contained Google Drive links, and the corresponding documents needed to be downloaded and uploaded to an AWS S3 bucket.
+
+Here is a high-level overview of the process:
+
+- The software is designed to run on both Windows and various Linux distributions.
+- It requires Java Runtime Environment (JRE) for execution.
+- The software operates through the command line interface (CLI).
+  
+The successful implementation of this solution allows for efficient data transfer from the Excel sheet to the local MySQL database and handles the download and upload of documents from Google Drive links to the AWS S3 bucket
